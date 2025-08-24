@@ -73,7 +73,7 @@ export function UploadSection() {
   const handleTextSubmit = async () => {
     if (textContent.trim()) {
       try {
-        const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook-test/d5680e45-22cc-4fa8-8bab-518679fe75d6', {
+        const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook/d5680e45-22cc-4fa8-8bab-518679fe75d6', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
