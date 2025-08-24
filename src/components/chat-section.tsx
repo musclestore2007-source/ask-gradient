@@ -36,7 +36,7 @@ export function ChatSection() {
 
     // Send question to webhook
     try {
-      const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook-test/1aa67438-d3d3-4980-9b2b-72be14b7c602', {
+      const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook/1aa67438-d3d3-4980-9b2b-72be14b7c602', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
