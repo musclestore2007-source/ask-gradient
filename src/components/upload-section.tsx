@@ -41,7 +41,7 @@ export function UploadSection() {
       const formData = new FormData()
       formData.append('file', file)
       
-      const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook-test/1b1bb27f-d4b9-45e4-9be6-77419beb6b12', {
+      const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook/1b1bb27f-d4b9-45e4-9be6-77419beb6b12', {
         method: 'POST',
         body: formData,
       })
@@ -70,13 +70,33 @@ export function UploadSection() {
     }
   }
 
-  const handleTextSubmit = () => {
+  const handleTextSubmit = async () => {
     if (textContent.trim()) {
-      toast({
-        title: "Text submitted successfully!",
-        description: "Your knowledge base content has been processed.",
-      })
-      setTextContent("")
+      try {
+        const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook-test/d5680e45-22cc-4fa8-8bab-518679fe75d6', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: textContent }),
+        })
+        
+        if (response.ok) {
+          toast({
+            title: "Text submitted successfully!",
+            description: "Your knowledge base content has been processed.",
+          })
+          setTextContent("")
+        } else {
+          throw new Error('Text webhook failed')
+        }
+      } catch (error) {
+        toast({
+          title: "Submission failed",
+          description: "Failed to send text content to webhook.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
