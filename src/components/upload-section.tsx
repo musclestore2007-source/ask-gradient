@@ -33,12 +33,34 @@ export function UploadSection() {
     }
   }
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setUploadedFile(file)
-    toast({
-      title: "File uploaded successfully!",
-      description: `${file.name} has been uploaded and is ready for processing.`,
-    })
+    
+    // Send file to webhook
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const response = await fetch('https://yogesh322007.app.n8n.cloud/webhook-test/1b1bb27f-d4b9-45e4-9be6-77419beb6b12', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (response.ok) {
+        toast({
+          title: "File uploaded successfully!",
+          description: `${file.name} has been uploaded and sent to webhook.`,
+        })
+      } else {
+        throw new Error('Webhook failed')
+      }
+    } catch (error) {
+      toast({
+        title: "Upload successful, webhook failed",
+        description: `${file.name} uploaded but couldn't send to webhook.`,
+        variant: "destructive",
+      })
+    }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,9 +104,25 @@ export function UploadSection() {
           onDrop={handleDrop}
         >
           {uploadedFile ? (
-            <div className="flex items-center justify-center gap-2 text-green-600">
-              <Check className="w-5 h-5" />
-              <span className="font-medium">{uploadedFile.name}</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-2 text-green-600">
+                <Check className="w-5 h-5" />
+                <span className="font-medium">{uploadedFile.name}</span>
+              </div>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  variant="gradient-outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Browse Files
+                </Button>
+                <Button 
+                  variant="gradient" 
+                  onClick={() => setUploadedFile(null)}
+                >
+                  Upload Another File
+                </Button>
+              </div>
             </div>
           ) : (
             <>
