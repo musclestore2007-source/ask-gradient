@@ -1,5 +1,5 @@
-import { useState, useRef } from "react"
-import { Upload, FileText, Check } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Upload, FileText, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,6 +9,8 @@ export function UploadSection() {
   const [dragActive, setDragActive] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [textContent, setTextContent] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -34,7 +36,21 @@ export function UploadSection() {
   }
 
   const handleFileUpload = async (file: File) => {
-    setUploadedFile(file)
+    setIsUploading(true)
+    setUploadProgress(0)
+    
+    const startTime = Date.now()
+    
+    // Simulate upload progress over 10 seconds
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval)
+          return 90
+        }
+        return prev + Math.random() * 15
+      })
+    }, 200)
     
     // Send file to webhook
     try {
@@ -46,21 +62,51 @@ export function UploadSection() {
         body: formData,
       })
       
-      if (response.ok) {
-        toast({
-          title: "File uploaded successfully!",
-          description: `${file.name} has been uploaded and sent to webhook.`,
-        })
-      } else {
-        throw new Error('Webhook failed')
-      }
+      // Complete the progress after minimum 10 seconds
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, 10000 - elapsedTime)
+      
+      setTimeout(() => {
+        setUploadProgress(100)
+        setTimeout(() => {
+          setIsUploading(false)
+          setUploadedFile(file)
+          
+          if (response.ok) {
+            toast({
+              title: "File uploaded successfully!",
+              description: `${file.name} has been processed and added to your knowledge base.`,
+            })
+          } else {
+            toast({
+              title: "Upload completed with warnings",
+              description: `${file.name} uploaded but webhook response was unexpected.`,
+              variant: "destructive",
+            })
+          }
+        }, 500)
+      }, remainingTime)
+      
     } catch (error) {
-      toast({
-        title: "Upload successful, webhook failed",
-        description: `${file.name} uploaded but couldn't send to webhook.`,
-        variant: "destructive",
-      })
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, 10000 - elapsedTime)
+      
+      setTimeout(() => {
+        setUploadProgress(100)
+        setTimeout(() => {
+          setIsUploading(false)
+          setUploadedFile(file)
+          
+          toast({
+            title: "Upload completed with errors",
+            description: `${file.name} uploaded but couldn't connect to processing service.`,
+            variant: "destructive",
+          })
+        }, 500)
+      }, remainingTime)
     }
+    
+    clearInterval(progressInterval)
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +162,8 @@ export function UploadSection() {
               ? "border-primary bg-gradient-secondary"
               : uploadedFile
               ? "border-green-500 bg-green-50"
+              : isUploading
+              ? "border-primary bg-gradient-secondary"
               : "border-muted-foreground/25 hover:border-primary/50"
           }`}
           onDragEnter={handleDrag}
@@ -123,7 +171,28 @@ export function UploadSection() {
           onDragOver={handleDrag}
           onDrop={handleDrop}
         >
-          {uploadedFile ? (
+          {isUploading ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="text-lg font-medium">Processing your file...</span>
+              </div>
+              <div className="space-y-3">
+                <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-primary transition-all duration-500 ease-out rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {uploadProgress < 30 ? "Analyzing document structure..." : 
+                   uploadProgress < 60 ? "Extracting content..." :
+                   uploadProgress < 90 ? "Building knowledge index..." :
+                   "Finalizing upload..."}
+                </p>
+              </div>
+            </div>
+          ) : uploadedFile ? (
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-2 text-green-600">
                 <Check className="w-5 h-5" />
@@ -152,6 +221,7 @@ export function UploadSection() {
               <Button 
                 variant="gradient-outline" 
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
               >
                 Browse Files
               </Button>

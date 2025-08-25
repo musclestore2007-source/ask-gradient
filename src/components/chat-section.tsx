@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Send, User, Bot } from "lucide-react"
+import { Send, User, Bot, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -46,10 +46,26 @@ export function ChatSection() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('Webhook response:', data) // Debug log
+        
+        // Handle different response formats
+        let responseContent = '';
+        if (data.answer) {
+          responseContent = data.answer;
+        } else if (data.response) {
+          responseContent = data.response;
+        } else if (data.message) {
+          responseContent = data.message;
+        } else if (typeof data === 'string') {
+          responseContent = data;
+        } else {
+          responseContent = JSON.stringify(data);
+        }
+        
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
-          content: data.answer || `Question "${question}" has been sent to the AI. Processing your knowledge base...`,
+          content: responseContent || `I received your question: "${question}". Processing your knowledge base...`,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, aiMessage])
@@ -75,6 +91,11 @@ export function ChatSection() {
     }
   }
 
+  const handleRefreshChat = () => {
+    setMessages([])
+    setInputValue("")
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -85,10 +106,25 @@ export function ChatSection() {
   return (
     <Card className="card-elegant animate-fade-in">
       <CardHeader>
-        <CardTitle className="gradient-text">💬 Chat Interface</CardTitle>
-        <CardDescription>
-          Ask questions about your uploaded knowledge base
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="gradient-text">💬 Chat Interface</CardTitle>
+            <CardDescription>
+              Ask questions about your uploaded knowledge base
+            </CardDescription>
+          </div>
+          {messages.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshChat}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              New Chat
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Chat Messages */}

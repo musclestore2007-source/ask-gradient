@@ -131,3 +131,13 @@
     @apply animate-spin rounded-full border-2 border-primary/20 border-t-primary;
   }
 }
+
+/* ElevenLabs Voice Agent Spacing */
+elevenlabs-convai {
+  margin-bottom: 80px !important;
+}
+
+/* Ensure proper spacing from bottom of page */
+body {
+  padding-bottom: 120px;
+}
