@@ -48,7 +48,7 @@ export function ChatSection() {
         const data = await response.json()
         console.log('Webhook response:', data) // Debug log
         
-        // Handle different response formats
+        // Handle different response formats and clean the text
         let responseContent = '';
         if (data.answer) {
           responseContent = data.answer;
@@ -61,6 +61,19 @@ export function ChatSection() {
         } else {
           responseContent = JSON.stringify(data);
         }
+        
+        // Clean the response text from any code formatting or special characters
+        responseContent = responseContent
+          .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+          .replace(/`([^`]+)`/g, '$1') // Remove inline code formatting
+          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+          .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
+          .replace(/_{2,}(.*?)_{2,}/g, '$1') // Remove underline formatting
+          .replace(/#{1,6}\s/g, '') // Remove markdown headers
+          .replace(/^\s*[-*+]\s/gm, '') // Remove bullet points
+          .replace(/^\s*\d+\.\s/gm, '') // Remove numbered lists
+          .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newline
+          .trim();
         
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
