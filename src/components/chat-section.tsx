@@ -50,41 +50,74 @@ export function ChatSection() {
         
         // Handle different response formats and extract pure text
         let responseContent = '';
-        if (data.answer) {
-          responseContent = data.answer;
-        } else if (data.response) {
-          responseContent = data.response;
-        } else if (data.message) {
-          responseContent = data.message;
-        } else if (data.output) {
-          responseContent = data.output;
-        } else if (typeof data === 'string') {
-          responseContent = data;
-        } else {
-          // Try to extract text from JSON object
-          const jsonStr = JSON.stringify(data);
-          const outputMatch = jsonStr.match(/"output"\s*:\s*"([^"]+)"/);
-          if (outputMatch) {
-            responseContent = outputMatch[1];
-          } else {
-            responseContent = jsonStr;
+        
+        // Convert entire response to string first
+        const responseStr = JSON.stringify(data);
+        
+        // Try multiple extraction methods for different JSON formats
+        const extractionPatterns = [
+          /"output"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/,  // {"output": "text"}
+          /"answer"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/,  // {"answer": "text"}
+          /"response"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/,  // {"response": "text"}
+          /"message"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/,  // {"message": "text"}
+          /"result"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/,   // {"result": "text"}
+          /"text"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/,     // {"text": "text"}
+          /"content"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/   // {"content": "text"}
+        ];
+        
+        // Try to extract using patterns
+        for (const pattern of extractionPatterns) {
+          const match = responseStr.match(pattern);
+          if (match && match[1]) {
+            responseContent = match[1];
+            break;
           }
         }
         
-        // Clean the response text from any formatting, JSON, and special characters
+        // If no pattern matched, try direct property access
+        if (!responseContent) {
+          if (data.output) responseContent = data.output;
+          else if (data.answer) responseContent = data.answer;
+          else if (data.response) responseContent = data.response;
+          else if (data.message) responseContent = data.message;
+          else if (data.result) responseContent = data.result;
+          else if (data.text) responseContent = data.text;
+          else if (data.content) responseContent = data.content;
+          else if (typeof data === 'string') responseContent = data;
+          else responseContent = responseStr;
+        }
+        
+        // Aggressive cleaning to ensure only plain text
         responseContent = responseContent
-          .replace(/^\s*\{.*?"output"\s*:\s*"([^"]+)".*?\}\s*$/g, '$1') // Extract from JSON format
-          .replace(/```[\s\S]*?```/g, '') // Remove code blocks
-          .replace(/`([^`]+)`/g, '$1') // Remove inline code formatting
-          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
-          .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
-          .replace(/_{2,}(.*?)_{2,}/g, '$1') // Remove underline formatting
-          .replace(/#{1,6}\s/g, '') // Remove markdown headers
-          .replace(/^\s*[-*+]\s/gm, '') // Remove bullet points
-          .replace(/^\s*\d+\.\s/gm, '') // Remove numbered lists
-          .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newline
-          .replace(/\\"/g, '"') // Unescape quotes
-          .replace(/\\n/g, '\n') // Convert escaped newlines
+          // Remove any remaining JSON structures
+          .replace(/^\s*[\{\[].*?[\}\]]\s*$/g, '')
+          .replace(/[\{\}]/g, '')
+          .replace(/\[|\]/g, '')
+          // Remove JSON key-value patterns
+          .replace(/"[^"]*"\s*:\s*/g, '')
+          .replace(/,\s*"[^"]*"/g, '')
+          // Remove quotes and escaped characters
+          .replace(/^["']|["']$/g, '')
+          .replace(/\\"/g, '"')
+          .replace(/\\'/g, "'")
+          .replace(/\\n/g, '\n')
+          .replace(/\\r/g, '\r')
+          .replace(/\\t/g, '\t')
+          .replace(/\\\\/g, '\\')
+          // Remove code formatting
+          .replace(/```[\s\S]*?```/g, '')
+          .replace(/`([^`]+)`/g, '$1')
+          // Remove markdown formatting
+          .replace(/\*\*(.*?)\*\*/g, '$1')
+          .replace(/\*(.*?)\*/g, '$1')
+          .replace(/_{2,}(.*?)_{2,}/g, '$1')
+          .replace(/#{1,6}\s*/g, '')
+          // Remove list formatting
+          .replace(/^\s*[-*+]\s*/gm, '')
+          .replace(/^\s*\d+\.\s*/gm, '')
+          // Clean up whitespace
+          .replace(/\n{3,}/g, '\n\n')
+          .replace(/\s+/g, ' ')
           .trim();
         
         const aiMessage: Message = {
