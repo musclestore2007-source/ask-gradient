@@ -46,7 +46,6 @@ export function AppSidebar() {
               <div>
                 <h2 className="font-bold text-sidebar-foreground">KnowledgeBase AI</h2>
                 <p className="text-xs text-sidebar-foreground/60 italic">by Yogesh Joshi</p>
-                <p className="text-xs text-sidebar-foreground/60">AI Assistant</p>
               </div>
             )}
           </div>

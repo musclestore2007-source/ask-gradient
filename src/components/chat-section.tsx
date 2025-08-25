@@ -48,7 +48,7 @@ export function ChatSection() {
         const data = await response.json()
         console.log('Webhook response:', data) // Debug log
         
-        // Handle different response formats and clean the text
+        // Handle different response formats and extract pure text
         let responseContent = '';
         if (data.answer) {
           responseContent = data.answer;
@@ -56,14 +56,24 @@ export function ChatSection() {
           responseContent = data.response;
         } else if (data.message) {
           responseContent = data.message;
+        } else if (data.output) {
+          responseContent = data.output;
         } else if (typeof data === 'string') {
           responseContent = data;
         } else {
-          responseContent = JSON.stringify(data);
+          // Try to extract text from JSON object
+          const jsonStr = JSON.stringify(data);
+          const outputMatch = jsonStr.match(/"output"\s*:\s*"([^"]+)"/);
+          if (outputMatch) {
+            responseContent = outputMatch[1];
+          } else {
+            responseContent = jsonStr;
+          }
         }
         
-        // Clean the response text from any code formatting or special characters
+        // Clean the response text from any formatting, JSON, and special characters
         responseContent = responseContent
+          .replace(/^\s*\{.*?"output"\s*:\s*"([^"]+)".*?\}\s*$/g, '$1') // Extract from JSON format
           .replace(/```[\s\S]*?```/g, '') // Remove code blocks
           .replace(/`([^`]+)`/g, '$1') // Remove inline code formatting
           .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
@@ -73,6 +83,8 @@ export function ChatSection() {
           .replace(/^\s*[-*+]\s/gm, '') // Remove bullet points
           .replace(/^\s*\d+\.\s/gm, '') // Remove numbered lists
           .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newline
+          .replace(/\\"/g, '"') // Unescape quotes
+          .replace(/\\n/g, '\n') // Convert escaped newlines
           .trim();
         
         const aiMessage: Message = {
