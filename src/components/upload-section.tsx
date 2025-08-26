@@ -41,8 +41,8 @@ export function UploadSection() {
     setUploadProgress(0)
     
     const startTime = Date.now()
-    const fileSizeMB = file.size / (1024 * 1024)
-    const isLargeFileDetected = fileSizeMB > 5 // Files larger than 5MB are considered large
+    const fileSizeKB = file.size / 1024
+    const isLargeFileDetected = fileSizeKB > 200 // Files larger than 200KB are considered large
     setIsLargeFile(isLargeFileDetected)
     
     // Simulate upload progress over 10 seconds
