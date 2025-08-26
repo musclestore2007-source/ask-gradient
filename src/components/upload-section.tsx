@@ -232,7 +232,7 @@ export function UploadSection() {
             type="file"
             className="hidden"
             onChange={handleFileInputChange}
-            accept=".pdf,.doc,.docx,.txt,.md"
+            accept=".pdf,.doc,.docx,.txt,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           />
         </div>
 
