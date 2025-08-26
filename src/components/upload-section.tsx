@@ -11,6 +11,7 @@ export function UploadSection() {
   const [textContent, setTextContent] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [isLargeFile, setIsLargeFile] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -40,6 +41,9 @@ export function UploadSection() {
     setUploadProgress(0)
     
     const startTime = Date.now()
+    const fileSizeMB = file.size / (1024 * 1024)
+    const isLargeFileDetected = fileSizeMB > 5 // Files larger than 5MB are considered large
+    setIsLargeFile(isLargeFileDetected)
     
     // Simulate upload progress over 10 seconds
     const progressInterval = setInterval(() => {
@@ -185,7 +189,7 @@ export function UploadSection() {
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {uploadProgress < 30 ? "Analyzing document structure..." : 
+                  {uploadProgress < 30 ? (isLargeFile ? "Large file detected - This may take 1-2 minutes to process..." : "Analyzing document structure...") : 
                    uploadProgress < 60 ? "Extracting content..." :
                    uploadProgress < 90 ? "Building knowledge index..." :
                    "Finalizing upload..."}
